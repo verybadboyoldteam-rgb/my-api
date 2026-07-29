@@ -1,6 +1,0 @@
-{
-  "name": "my-api",
-  "version": "1.0.0",
-  "description": "API с персонализированными данными для заказчика",
-  "main": "api/index.js"
-}
