@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+module.exports = (req, res) => {
   const data = {
     name: "Алексей",
     age: 35,
@@ -16,4 +16,4 @@ export default function handler(req, res) {
   };
 
   res.status(200).json(data);
-}
+};
