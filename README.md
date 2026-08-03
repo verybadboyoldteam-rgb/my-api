@@ -1,24 +1,36 @@
-API с авторизацией
-Этот API возвращает персонализированный JSON-ответ. Доступ защищён двумя способами авторизации: через токен и через логин/пароль.
+# API с авторизацией
 
-🔗 Ссылка на сервис
-https://my-api-pde9.vercel.app/api
+Этот API возвращает персонализированный JSON-ответ. Доступ защищён двумя способами авторизации.
 
-📦 Что возвращает API
-Ключ	Тип	Пример
-name	строка	"Алексей"
-age	число	35
-profession	строка	"Руководитель отдела мобильной разработки"
-hobbies	массив строк	["менять скины в Quake 3", ...]
-location	объект	{ "currentCity": "Минск", ... }
-🔐 Способ 1 — Bearer-токен
-Добавьте заголовок Authorization в запрос:
+---
+
+## 🔗 Ссылка на сервис
+
+[https://my-api-pde9.vercel.app/api](https://my-api-pde9.vercel.app/api)
+
+---
+
+## 📦 Что возвращает API
+
+| Ключ | Тип | Пример |
+|------|-----|--------|
+| `name` | строка | "Алексей" |
+| `age` | число | 35 |
+| `profession` | строка | "Руководитель отдела мобильной разработки" |
+| `hobbies` | массив строк | ["менять скины в Quake 3", ...] |
+| `location` | объект | { "currentCity": "Минск", ... } |
+
+---
+
+## 🔐 Способ 1 — Bearer-токен
+
+Добавьте в запрос заголовок:
+Authorization: Bearer leha_krepko_divigatesya
 
 text
-Authorization: Bearer leha_krepko_divigatesya
-Пример через curl:
 
-bash
+**Пример через curl:**
+```bash
 curl -H "Authorization: Bearer leha_krepko_divigatesya" https://my-api-pde9.vercel.app/api
 Пример через JavaScript (консоль браузера):
 
