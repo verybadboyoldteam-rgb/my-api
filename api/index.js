@@ -1,6 +1,12 @@
 module.exports = (req, res) => {
   const validToken = process.env.API_TOKEN;
 
+  if (!validToken) {
+    return res.status(500).json({
+      error: "Ошибка конфигурации сервера: API_TOKEN не задан."
+    });
+  }
+
   const token = req.headers.authorization;
   const isTokenValid = token === `Bearer ${validToken}`;
 
