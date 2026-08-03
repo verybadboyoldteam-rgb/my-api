@@ -1,4 +1,18 @@
 module.exports = (req, res) => {
+  const validToken = process.env.API_TOKEN;
+
+  const token = req.headers.authorization;
+  const isTokenValid = token === `Bearer ${validToken}`;
+
+  const { login, password } = req.body;
+  const isLoginPasswordValid = login === "admin" && password === "12345";
+
+  if (!isTokenValid && !isLoginPasswordValid) {
+    return res.status(401).json({
+      error: "Доступ запрещён. Неверный токен, логин или пароль."
+    });
+  }
+
   const data = {
     name: "Алексей",
     age: 35,
