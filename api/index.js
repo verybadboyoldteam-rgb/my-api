@@ -11,8 +11,11 @@ module.exports = (req, res) => {
     const authHeader = req.headers.authorization;
     const isTokenValid = authHeader === `Bearer ${expectedToken}`;
 
-    const { login, password } = req.body;
-    const isLoginPasswordValid = login === 'admin' && password === '12345';
+    let isLoginPasswordValid = false;
+    if (req.method === 'POST' && req.body) {
+      const { login, password } = req.body;
+      isLoginPasswordValid = login === 'admin' && password === '12345';
+    }
 
     if (!isTokenValid && !isLoginPasswordValid) {
       return res.status(401).json({ error: 'Unauthorized: invalid or missing token or credentials' });
