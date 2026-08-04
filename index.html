@@ -20,10 +20,10 @@
 </head>
 <body>
   <div class="container">
-    <h2>Вход в API</h2>
-    <input type="text" id="login" placeholder="Логин" value="admin">
-    <input type="password" id="password" placeholder="Пароль" value="12345">
-    <div id="error-message" class="error-message">Неверный логин или пароль</div>
+    <h2>🔐 Вход в API</h2>
+    <input type="text" id="login" placeholder="Введите логин">
+    <input type="password" id="password" placeholder="Введите пароль">
+    <div id="error-message" class="error-message">❌ Неверный логин или пароль</div>
     <button id="submitBtn" onclick="login()">Получить данные</button>
     <div id="result" class="loading">Введите логин и пароль</div>
   </div>
@@ -37,7 +37,7 @@
 
       errorMsg.style.display = 'none';
       resultDiv.className = '';
-      resultDiv.textContent = 'Загрузка...';
+      resultDiv.textContent = '⏳ Загрузка...';
       submitBtn.disabled = true;
 
       try {
@@ -56,14 +56,14 @@
           resultDiv.className = 'error';
           if (response.status === 401) {
             errorMsg.style.display = 'block';
-            resultDiv.textContent = 'Доступ запрещён. Проверьте логин и пароль.';
+            resultDiv.textContent = '❌ Доступ запрещён. Проверьте логин и пароль.';
           } else {
-            resultDiv.textContent = 'Ошибка сервера: ' + (data.error || 'Неизвестная ошибка');
+            resultDiv.textContent = `❌ Ошибка сервера: ${data.error || 'Неизвестная ошибка'}`;
           }
         }
       } catch (err) {
         resultDiv.className = 'error';
-        resultDiv.textContent = 'Ошибка сети: ' + err.message + '. Проверьте интернет-соединение.';
+        resultDiv.textContent = `❌ Ошибка сети: ${err.message}. Проверьте интернет-соединение.`;
       } finally {
         submitBtn.disabled = false;
       }
