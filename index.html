@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Авторизация</title>
+  <style>
+    body { font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; }
+    input { display: block; width: 100%; padding: 8px; margin: 10px 0; }
+    button { padding: 10px 20px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #005bb5; }
+    #result { margin-top: 20px; white-space: pre-wrap; background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>Вход в API</h2>
+  <input type="text" id="login" placeholder="Логин" value="admin">
+  <input type="password" id="password" placeholder="Пароль" value="12345">
+  <button onclick="login()">Получить данные</button>
+  <div id="result"></div>
+  <script>
+    async function login() {
+      const login = document.getElementById('login').value;
+      const password = document.getElementById('password').value;
+      const resultDiv = document.getElementById('result');
+      resultDiv.textContent = 'Загрузка...';
+      try {
+        const response = await fetch('/api', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ login, password })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        } else {
+          resultDiv.innerHTML = `<span class="error">Ошибка: ${data.error || 'Неизвестная ошибка'}</span>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<span class="error">Ошибка сети: ${err.message}</span>`;
+      }
+    }
+  </script>
+</body>
+</html>
