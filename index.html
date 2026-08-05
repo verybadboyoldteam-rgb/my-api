@@ -8,25 +8,42 @@
     body { font-family: Arial; max-width: 400px; margin: 50px auto; padding: 20px; background: #f9f9f9; }
     .container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     input { display: block; width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-    button { width: 100%; padding: 10px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+    button { width: 100%; padding: 10px; margin-top: 10px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
     button:hover { background: #005bb5; }
     button:disabled { background: #ccc; cursor: not-allowed; }
+    .logout-btn { background: #dc3545; }
+    .logout-btn:hover { background: #b02a37; }
     #result { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; white-space: pre-wrap; word-break: break-word; }
     #result.error { background: #ffe6e6; color: #cc0000; border: 1px solid #ff9999; }
     #result.success { background: #e6ffe6; color: #006600; border: 1px solid #99cc99; }
     .loading { text-align: center; color: #666; font-style: italic; }
     .error-message { color: red; font-size: 14px; margin-top: -5px; margin-bottom: 10px; display: none; }
+    .flex { display: flex; gap: 10px; }
+    .flex button { flex: 1; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>🔐 Вход в API</h2>
-    <input type="text" id="login" placeholder="Введите логин">
-    <input type="password" id="password" placeholder="Введите пароль">
-    <div id="error-message" class="error-message">❌ Неверный логин или пароль</div>
-    <button id="submitBtn" onclick="login()">Получить данные</button>
+    
+    <div id="auth-form">
+      <input type="text" id="login" placeholder="Введите логин">
+      <input type="password" id="password" placeholder="Введите пароль">
+      <div id="error-message" class="error-message">❌ Неверный логин или пароль</div>
+      <button id="submitBtn" onclick="login()">Получить данные</button>
+    </div>
+
+    <div id="logout-section" class="hidden">
+      <div class="flex">
+        <button class="logout-btn" onclick="logout()">🚪 Выйти</button>
+        <button onclick="fetchData()">🔄 Обновить данные</button>
+      </div>
+    </div>
+
     <div id="result" class="loading">Введите логин и пароль</div>
   </div>
+
   <script>
     let currentToken = null;
 
@@ -43,16 +60,15 @@
       submitBtn.disabled = true;
 
       try {
-        // 1. Получаем токен через /login
-        const loginResponse = await fetch('/login', {
+        const response = await fetch('/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ login, password })
         });
 
-        const loginData = await loginResponse.json();
+        const data = await response.json();
 
-        if (!loginResponse.ok) {
+        if (!response.ok) {
           resultDiv.className = 'error';
           errorMsg.style.display = 'block';
           resultDiv.textContent = '❌ Доступ запрещён. Проверьте логин и пароль.';
@@ -60,29 +76,72 @@
           return;
         }
 
-        currentToken = loginData.token;
-
-        // 2. Запрашиваем данные с токеном
-        const dataResponse = await fetch('/api', {
-          headers: {
-            'Authorization': `Bearer ${currentToken}`
-          }
-        });
-
-        const data = await dataResponse.json();
-
-        if (dataResponse.ok) {
-          resultDiv.className = 'success';
-          resultDiv.textContent = JSON.stringify(data, null, 2);
-        } else {
-          resultDiv.className = 'error';
-          resultDiv.textContent = '❌ Ошибка получения данных: ' + (data.error || 'Неизвестная ошибка');
-        }
+        currentToken = data.token;
+        document.getElementById('auth-form').classList.add('hidden');
+        document.getElementById('logout-section').classList.remove('hidden');
+        await fetchData();
       } catch (err) {
         resultDiv.className = 'error';
         resultDiv.textContent = '❌ Ошибка сети: ' + err.message;
       } finally {
         submitBtn.disabled = false;
+      }
+    }
+
+    async function fetchData() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = '';
+      resultDiv.textContent = '⏳ Загрузка...';
+
+      try {
+        const response = await fetch('/api', {
+          headers: {
+            'Authorization': `Bearer ${currentToken}`
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          resultDiv.className = 'success';
+          resultDiv.textContent = JSON.stringify(data, null, 2);
+        } else {
+          resultDiv.className = 'error';
+          resultDiv.textContent = '❌ Ошибка: ' + (data.error || 'Неизвестная ошибка');
+        }
+      } catch (err) {
+        resultDiv.className = 'error';
+        resultDiv.textContent = '❌ Ошибка сети: ' + err.message;
+      }
+    }
+
+    async function logout() {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = '';
+      resultDiv.textContent = '⏳ Выход...';
+
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${currentToken}`
+          }
+        });
+
+        if (response.ok) {
+          currentToken = null;
+          document.getElementById('auth-form').classList.remove('hidden');
+          document.getElementById('logout-section').classList.add('hidden');
+          resultDiv.className = '';
+          resultDiv.textContent = '✅ Вы вышли из системы. Введите логин и пароль для нового входа.';
+        } else {
+          const data = await response.json();
+          resultDiv.className = 'error';
+          resultDiv.textContent = '❌ Ошибка выхода: ' + (data.error || 'Неизвестная ошибка');
+        }
+      } catch (err) {
+        resultDiv.className = 'error';
+        resultDiv.textContent = '❌ Ошибка сети: ' + err.message;
       }
     }
   </script>
