@@ -8,7 +8,7 @@ function generateToken() {
 module.exports = (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
     if (req.method === 'POST' && req.path === '/login') {
       const { login, password } = req.body;
@@ -72,7 +72,6 @@ module.exports = (req, res) => {
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized: missing token' });
     }
-
     const activeSession = sessions.find(s => s.token === token && s.isActive);
     if (!activeSession) {
       return res.status(401).json({ error: 'Unauthorized: invalid or expired token' });
