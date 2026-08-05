@@ -36,8 +36,9 @@ function handleRequest(req, res) {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    const path = req.url.split('?')[0];
 
-    if (req.method === 'POST' && req.path === '/login') {
+    if (req.method === 'POST' && path === '/login') {
       const { login, password } = req.body || {};
       if (login === 'admin' && password === '12345') {
         const newToken = generateToken();
@@ -60,7 +61,7 @@ function handleRequest(req, res) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (req.method === 'POST' && req.path === '/logout') {
+    if (req.method === 'POST' && path === '/logout') {
       if (!token) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -72,7 +73,7 @@ function handleRequest(req, res) {
       return res.status(200).json({ message: 'Logged out successfully' });
     }
 
-    if (req.method === 'GET' && req.path === '/sessions') {
+    if (req.method === 'GET' && path === '/sessions') {
       if (!token) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
@@ -80,11 +81,11 @@ function handleRequest(req, res) {
       return res.status(200).json({ sessions: userSessions });
     }
 
-    if (req.method === 'DELETE' && req.path.startsWith('/sessions/')) {
+    if (req.method === 'DELETE' && path.startsWith('/sessions/')) {
       if (!token) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      const sessionId = parseInt(req.path.split('/')[2]);
+      const sessionId = parseInt(path.split('/')[2]);
       if (isNaN(sessionId)) {
         return res.status(400).json({ error: 'Invalid session ID' });
       }
