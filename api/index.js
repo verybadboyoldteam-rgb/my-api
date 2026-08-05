@@ -5,13 +5,40 @@ function generateToken() {
   return 'token_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 }
 
+function getBody(req, callback) {
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    try {
+      callback(null, JSON.parse(body));
+    } catch {
+      callback(new Error('Invalid JSON'));
+    }
+  });
+  req.on('error', callback);
+}
+
 module.exports = (req, res) => {
+  if (req.method === 'POST') {
+    getBody(req, (err, body) => {
+      if (err) {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+      req.body = body;
+      handleRequest(req, res);
+    });
+  } else {
+    handleRequest(req, res);
+  }
+};
+
+function handleRequest(req, res) {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
 
     if (req.method === 'POST' && req.path === '/login') {
-      const { login, password } = req.body;
+      const { login, password } = req.body || {};
       if (login === 'admin' && password === '12345') {
         const newToken = generateToken();
         const session = {
@@ -102,4 +129,4 @@ module.exports = (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'Internal Server Error: ' + err.message });
   }
-};
+}
