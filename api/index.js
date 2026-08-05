@@ -19,7 +19,10 @@ function getBody(req, callback) {
 }
 
 module.exports = (req, res) => {
-  if (req.method === 'POST') {
+  const path = req.url.split('?')[0];
+
+  // Для /logout тело не нужно — парсим только для /login
+  if (req.method === 'POST' && path === '/login') {
     getBody(req, (err, body) => {
       if (err) {
         return res.status(400).json({ error: 'Invalid JSON' });
