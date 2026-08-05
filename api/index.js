@@ -1,24 +1,81 @@
+const sessions = [];
+let sessionIdCounter = 1;
+
+function generateToken() {
+  return 'token_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+}
+
 module.exports = (req, res) => {
   try {
-    const expectedToken = process.env.API_TOKEN;
-
-    if (!expectedToken) {
-      return res.status(500).json({
-        error: 'Ошибка конфигурации: API_TOKEN не задан в переменных окружения.'
-      });
-    }
-
     const authHeader = req.headers.authorization;
-    const isTokenValid = authHeader === `Bearer ${expectedToken}`;
+    const token = authHeader?.split(' ')[1];
 
-    let isLoginPasswordValid = false;
-    if (req.method === 'POST' && req.body) {
+    if (req.method === 'POST' && req.path === '/login') {
       const { login, password } = req.body;
-      isLoginPasswordValid = login === 'admin' && password === '12345';
+      if (login === 'admin' && password === '12345') {
+        const newToken = generateToken();
+        const session = {
+          id: sessionIdCounter++,
+          token: newToken,
+          login: login,
+          createdAt: Date.now(),
+          userAgent: req.headers['user-agent'] || 'unknown',
+          ip: req.headers['x-forwarded-for']?.split(',')[0] || req.socket.remoteAddress || 'unknown',
+          isActive: true
+        };
+        sessions.push(session);
+        return res.status(200).json({
+          message: 'Login successful',
+          token: newToken,
+          sessionId: session.id
+        });
+      }
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (!isTokenValid && !isLoginPasswordValid) {
-      return res.status(401).json({ error: 'Unauthorized: invalid or missing token or credentials' });
+    if (req.method === 'POST' && req.path === '/logout') {
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const sessionIndex = sessions.findIndex(s => s.token === token && s.isActive);
+      if (sessionIndex === -1) {
+        return res.status(401).json({ error: 'Invalid or expired token' });
+      }
+      sessions[sessionIndex].isActive = false;
+      return res.status(200).json({ message: 'Logged out successfully' });
+    }
+
+    if (req.method === 'GET' && req.path === '/sessions') {
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const userSessions = sessions.filter(s => s.isActive);
+      return res.status(200).json({ sessions: userSessions });
+    }
+
+    if (req.method === 'DELETE' && req.path.startsWith('/sessions/')) {
+      if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const sessionId = parseInt(req.path.split('/')[2]);
+      if (isNaN(sessionId)) {
+        return res.status(400).json({ error: 'Invalid session ID' });
+      }
+      const session = sessions.find(s => s.id === sessionId && s.isActive);
+      if (!session) {
+        return res.status(404).json({ error: 'Session not found' });
+      }
+      session.isActive = false;
+      return res.status(200).json({ message: 'Session revoked successfully' });
+    }
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: missing token' });
+    }
+
+    const activeSession = sessions.find(s => s.token === token && s.isActive);
+    if (!activeSession) {
+      return res.status(401).json({ error: 'Unauthorized: invalid or expired token' });
     }
 
     res.status(200).json({
@@ -34,6 +91,13 @@ module.exports = (req, res) => {
         currentCity: "Минск",
         currentCountry: "Беларусь",
         dreamCountry: "Франция"
+      },
+      session: {
+        id: activeSession.id,
+        login: activeSession.login,
+        createdAt: new Date(activeSession.createdAt).toLocaleString(),
+        userAgent: activeSession.userAgent,
+        ip: activeSession.ip
       }
     });
   } catch (err) {
