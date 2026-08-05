@@ -28,6 +28,8 @@
     <div id="result" class="loading">Введите логин и пароль</div>
   </div>
   <script>
+    let currentToken = null;
+
     async function login() {
       const login = document.getElementById('login').value.trim();
       const password = document.getElementById('password').value.trim();
@@ -41,29 +43,44 @@
       submitBtn.disabled = true;
 
       try {
-        const response = await fetch('/api', {
+        // 1. Получаем токен через /login
+        const loginResponse = await fetch('/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ login, password })
         });
 
-        const data = await response.json();
+        const loginData = await loginResponse.json();
 
-        if (response.ok) {
+        if (!loginResponse.ok) {
+          resultDiv.className = 'error';
+          errorMsg.style.display = 'block';
+          resultDiv.textContent = '❌ Доступ запрещён. Проверьте логин и пароль.';
+          submitBtn.disabled = false;
+          return;
+        }
+
+        currentToken = loginData.token;
+
+        // 2. Запрашиваем данные с токеном
+        const dataResponse = await fetch('/api', {
+          headers: {
+            'Authorization': `Bearer ${currentToken}`
+          }
+        });
+
+        const data = await dataResponse.json();
+
+        if (dataResponse.ok) {
           resultDiv.className = 'success';
           resultDiv.textContent = JSON.stringify(data, null, 2);
         } else {
           resultDiv.className = 'error';
-          if (response.status === 401) {
-            errorMsg.style.display = 'block';
-            resultDiv.textContent = '❌ Доступ запрещён. Проверьте логин и пароль.';
-          } else {
-            resultDiv.textContent = `❌ Ошибка сервера: ${data.error || 'Неизвестная ошибка'}`;
-          }
+          resultDiv.textContent = '❌ Ошибка получения данных: ' + (data.error || 'Неизвестная ошибка');
         }
       } catch (err) {
         resultDiv.className = 'error';
-        resultDiv.textContent = `❌ Ошибка сети: ${err.message}. Проверьте интернет-соединение.`;
+        resultDiv.textContent = '❌ Ошибка сети: ' + err.message;
       } finally {
         submitBtn.disabled = false;
       }
